@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const { sequelize } = require('./models');
+const { authenticateToken } = require('./middleware/auth');
 
 // Load environment variables
 dotenv.config();
@@ -11,15 +12,21 @@ const app = express();
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
-app.use('/api/users', require('./routes/users'));
-app.use('/api/workouts', require('./routes/workouts'));
-app.use('/api/meals', require('./routes/meals'));
-app.use('/api/goals', require('./routes/goals'));
-app.use('/api/daily-logs', require('./routes/dailyLogs'));
+
+// Protected routes
+app.use('/api/users', authenticateToken, require('./routes/users'));
+app.use('/api/workouts', authenticateToken, require('./routes/workouts'));
+app.use('/api/meals', authenticateToken, require('./routes/meals'));
+app.use('/api/goals', authenticateToken, require('./routes/goals'));
+app.use('/api/daily-logs', authenticateToken, require('./routes/dailyLogs'));
+
+// Basic test route
+app.get('/', (req, res) => {
+  res.json({ message: 'Server is running!' });
+});
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -31,7 +38,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
 
 // Database connection and server start
 async function startServer() {
