@@ -7,7 +7,18 @@ const Goals = require('./Goals');
 const MealTracking = require('./MealTracking');
 const WeightTracking = require('./WeightTracking');
 
-// User - Trainer relationship
+// Initialize models
+const models = {
+  User,
+  WorkoutTemplate,
+  UserWorkouts,
+  DailyLog,
+  Goals,
+  MealTracking,
+  WeightTracking
+};
+
+// User - Trainer relationship (self-referential)
 User.belongsTo(User, { as: 'trainer', foreignKey: 'trainer_id' });
 User.hasMany(User, { as: 'clients', foreignKey: 'trainer_id' });
 
@@ -45,11 +56,5 @@ UserWorkouts.belongsTo(DailyLog, { foreignKey: ['user_id', 'log_date'], constrai
 
 module.exports = {
   sequelize,
-  User,
-  WorkoutTemplate,
-  UserWorkouts,
-  DailyLog,
-  Goals,
-  MealTracking,
-  WeightTracking
+  ...models
 }; 

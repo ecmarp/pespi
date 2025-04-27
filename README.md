@@ -33,50 +33,21 @@ A comprehensive fitness and wellness tracking application that helps users monit
    ```bash
    npm install
    ```
-3. Create a `.env` file in the root directory with the following variables:
+3. Create a `.env` file in the root directory with the following variables (info in discord):
    ```
-   DB_HOST=localhost
-   DB_PORT=5432
-   DB_NAME=pespifitness
-   DB_USER=your_username
-   DB_PASSWORD=your_password
-   JWT_SECRET=your_jwt_secret
+   DB_HOST=
+   DB_PORT=
+   DB_NAME=
+   DB_USER=
+   DB_PASSWORD=
+   JWT_SECRET=
    ```
 4. Initialize the database:
-   ```bash
-   npm run db:init
    ```
-5. Start the development server:
-   ```bash
    npm run dev
    ```
-
-## Project Structure
-
-```
-pespifitness/
-├── src/
-│   ├── server.js
-│   ├── config/
-│   ├── models/
-│   ├── controllers/
-│   ├── routes/
-│   ├── middleware/
-│   └── utils/
-├── client/
-│   ├── src/
-│   ├── public/
-│   └── package.json
-└── package.json
-```
-
-## Contributing
-
-1. Create a feature branch
-2. Commit your changes
-3. Push to the branch
-4. Create a Pull Request
-
-## License
-
-This project is licensed under the MIT License. 
+5. Start the development server (front end):
+   ```
+   cd client
+   npm start
+   ```
