@@ -10,7 +10,12 @@ dotenv.config();
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:3000', // Allow requests from React client
+  credentials: true, // Allow credentials
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Allowed methods
+  allowedHeaders: ['Content-Type', 'Authorization'] // Allowed headers
+}));
 app.use(express.json());
 
 // Routes
@@ -46,8 +51,8 @@ async function startServer() {
     await sequelize.authenticate();
     console.log('Database connection established successfully.');
     
-    // Sync database models
-    await sequelize.sync({ alter: process.env.NODE_ENV === 'development' });
+    // Sync database models - use alter instead of force in development
+    await sequelize.sync({ alter: true });
     console.log('Database models synchronized.');
 
     app.listen(PORT, () => {

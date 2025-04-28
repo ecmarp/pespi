@@ -41,7 +41,7 @@ const User = sequelize.define('User', {
     defaultValue: DataTypes.NOW
   },
   user_height: {
-    type: DataTypes.DECIMAL(5, 2),
+    type: DataTypes.FLOAT,
     allowNull: false
   },
   is_trainer: {
@@ -57,6 +57,8 @@ const User = sequelize.define('User', {
     }
   }
 }, {
+  tableName: 'users',
+  timestamps: false,
   hooks: {
     beforeCreate: async (user) => {
       if (user.password) {

@@ -197,4 +197,31 @@ router.get('/stats', async (req, res) => {
   }
 });
 
+// Delete a workout log
+router.delete('/log/:id', async (req, res) => {
+  try {
+    const workoutId = req.params.id;
+    
+    // Find the workout and verify it belongs to the user
+    const workout = await UserWorkouts.findOne({
+      where: {
+        user_workout_id: workoutId,
+        user_id: req.user.userId
+      }
+    });
+
+    if (!workout) {
+      return res.status(404).json({ message: 'Workout not found or unauthorized' });
+    }
+
+    // Delete the workout
+    await workout.destroy();
+
+    res.json({ message: 'Workout deleted successfully' });
+  } catch (error) {
+    console.error('Workout deletion error:', error);
+    res.status(500).json({ message: 'Server error deleting workout' });
+  }
+});
+
 module.exports = router; 

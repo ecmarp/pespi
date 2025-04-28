@@ -3,39 +3,53 @@ const router = express.Router();
 const { body, validationResult } = require('express-validator');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { User } = require('../models');
+const { User, sequelize } = require('../models');
 
-// Register a new user
+// Register user
 router.post('/register', [
   body('email').isEmail().withMessage('Please enter a valid email'),
-  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters long'),
+  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
   body('name').notEmpty().withMessage('Name is required'),
   body('age').isInt({ min: 13, max: 120 }).withMessage('Age must be between 13 and 120'),
   body('gender').isIn(['male', 'female', 'other']).withMessage('Gender must be male, female, or other'),
   body('fitness_goal').notEmpty().withMessage('Fitness goal is required'),
-  body('user_height').isFloat({ min: 0 }).withMessage('Height must be a positive number'),
-  body('is_trainer').optional().isBoolean().withMessage('is_trainer must be a boolean'),
-  body('trainer_id').optional().isInt().withMessage('trainer_id must be an integer')
+  body('user_height').isFloat({ min: 0.5, max: 3 }).withMessage('Height must be between 0.5 and 3 meters')
 ], async (req, res) => {
+  console.log('Received registration request:', req.body);
+  
   try {
     // Check for validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log('Validation errors:', errors.array());
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { email, password, name, age, gender, fitness_goal, user_height, is_trainer, trainer_id } = req.body;
+    const { 
+      email, 
+      password, 
+      name, 
+      age, 
+      gender, 
+      fitness_goal, 
+      user_height,
+      is_trainer,
+      trainer_id
+    } = req.body;
 
     // Check if user already exists
     const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
-      return res.status(400).json({ message: 'User already exists with this email' });
+      console.log('User already exists with email:', email);
+      return res.status(400).json({ message: 'Email already in use' });
     }
 
+    console.log('Creating new user with email:', email);
+    
     // Create new user
     const user = await User.create({
       email,
-      password, // Password will be hashed by the model hook
+      password,
       name,
       age,
       gender,
@@ -44,6 +58,8 @@ router.post('/register', [
       is_trainer: is_trainer || false,
       trainer_id
     });
+
+    console.log('User created successfully with ID:', user.user_id);
 
     // Generate JWT token
     const token = jwt.sign(
@@ -56,6 +72,8 @@ router.post('/register', [
     const userData = user.toJSON();
     delete userData.password;
 
+    console.log('Sending successful registration response');
+    
     res.status(201).json({
       message: 'User registered successfully',
       user: userData,
@@ -63,6 +81,12 @@ router.post('/register', [
     });
   } catch (error) {
     console.error('Registration error:', error);
+    // Log more details about the error
+    if (error.name === 'SequelizeValidationError') {
+      console.error('Validation errors:', error.errors.map(e => e.message));
+    } else if (error.name === 'SequelizeUniqueConstraintError') {
+      console.error('Unique constraint error:', error.errors.map(e => e.message));
+    }
     res.status(500).json({ message: 'Server error during registration' });
   }
 });
@@ -135,6 +159,28 @@ router.get('/me', async (req, res) => {
   } catch (error) {
     console.error('Profile retrieval error:', error);
     res.status(500).json({ message: 'Server error retrieving profile' });
+  }
+});
+
+// Debug route to check database tables
+router.get('/debug/tables', async (req, res) => {
+  try {
+    // Get all tables
+    const [results] = await sequelize.query(
+      "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'"
+    );
+    
+    // Get user count
+    const userCount = await User.count();
+    
+    res.json({
+      tables: results.map(r => r.table_name),
+      userCount,
+      message: 'Database debug info'
+    });
+  } catch (error) {
+    console.error('Debug error:', error);
+    res.status(500).json({ message: 'Error checking database', error: error.message });
   }
 });
 
