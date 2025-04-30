@@ -33,12 +33,13 @@ interface Workout {
 
 interface Meal {
   id: number;
-  name: string;
+  meal_name: string;
+  meal_type: string;
   calories: number;
   protein: number;
   carbs: number;
   fat: number;
-  time: string;
+  meal_time: string;
 }
 
 interface DayDetailProps {
@@ -216,8 +217,8 @@ const DayDetail: React.FC<DayDetailProps> = ({
                 <MealIcon color="secondary" />
               </ListItemIcon>
               <ListItemText 
-                primary={meal.name}
-                secondary={`${meal.time} • P: ${meal.protein}g • C: ${meal.carbs}g • F: ${meal.fat}g`}
+                primary={`${meal.meal_type.charAt(0).toUpperCase() + meal.meal_type.slice(1)} - ${meal.meal_name}`}
+                secondary={`${meal.meal_time} • P: ${meal.protein}g • C: ${meal.carbs}g • F: ${meal.fat}g`}
               />
               <Chip 
                 label={`${meal.calories} cal`} 

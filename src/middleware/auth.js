@@ -23,8 +23,11 @@ const authenticateToken = async (req, res, next) => {
       return res.status(401).json({ message: 'User not found' });
     }
 
-    // Add user to request object
-    req.user = decoded;
+    // Add user to request object with consistent user_id
+    req.user = {
+      user_id: user.user_id,
+      ...decoded
+    };
     next();
   } catch (error) {
     if (error.name === 'JsonWebTokenError') {
@@ -43,7 +46,7 @@ const authenticateToken = async (req, res, next) => {
  */
 const isTrainer = async (req, res, next) => {
   try {
-    const user = await User.findByPk(req.user.userId);
+    const user = await User.findByPk(req.user.user_id);
     
     if (!user || !user.is_trainer) {
       return res.status(403).json({ message: 'Access denied. Trainer privileges required.' });

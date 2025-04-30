@@ -21,6 +21,7 @@ import Calendar from '../components/Calendar';
 import DayDetail from '../components/DayDetail';
 import AddWorkoutDialog from '../components/AddWorkoutDialog';
 import AddMealDialog from '../components/AddMealDialog';
+import AddWeightDialog from '../components/AddWeightDialog';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 
@@ -45,13 +46,6 @@ interface DayDataMap {
   [key: string]: DayData;
 }
 
-// Mock meal data
-const mockMeals = [
-  { id: 1, name: 'Breakfast', calories: 450, protein: 20, carbs: 60, fat: 15, time: '8:00 AM' },
-  { id: 2, name: 'Lunch', calories: 650, protein: 30, carbs: 80, fat: 20, time: '12:30 PM' },
-  { id: 3, name: 'Dinner', calories: 550, protein: 25, carbs: 70, fat: 18, time: '7:00 PM' },
-];
-
 // Styled components
 const QuickActionButton = styled(Button)(({ theme }) => ({
   width: '100%',
@@ -71,6 +65,43 @@ const Dashboard: React.FC = () => {
   const [weight, setWeight] = useState<number | undefined>(undefined);
   const [isAddWorkoutOpen, setIsAddWorkoutOpen] = useState(false);
   const [isAddMealOpen, setIsAddMealOpen] = useState(false);
+  const [isAddWeightOpen, setIsAddWeightOpen] = useState(false);
+
+  // Add useEffect to fetch meals when selectedDate changes
+  useEffect(() => {
+    const fetchMeals = async () => {
+      if (!selectedDate || !token) return;
+      
+      try {
+        const dateStr = selectedDate.toISOString().split('T')[0];
+        const response = await axios.get(
+          `${process.env.REACT_APP_API_URL}/meals/daily/${dateStr}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+        
+        setMeals(response.data.meals || []);
+        
+        // Update dayData with the meal information
+        setDayData(prevData => ({
+          ...prevData,
+          [dateStr]: {
+            ...prevData[dateStr],
+            hasMeal: response.data.meals.length > 0,
+            totalCalories: response.data.dailyTotals?.calories || 0
+          }
+        }));
+      } catch (error) {
+        console.error('Error fetching meals:', error);
+      }
+    };
+
+    fetchMeals();
+  }, [selectedDate, token]);
 
   const handleDaySelect = (date: Date) => {
     setSelectedDate(date);
@@ -79,11 +110,9 @@ const Dashboard: React.FC = () => {
     
     if (dayInfo) {
       setWorkouts(dayInfo.workouts || []);
-      setMeals(dayInfo.hasMeal ? mockMeals : []);
       setWeight(dayInfo.weight);
     } else {
       setWorkouts([]);
-      setMeals([]);
       setWeight(undefined);
     }
   };
@@ -97,8 +126,22 @@ const Dashboard: React.FC = () => {
   };
 
   const handleLogWeight = () => {
-    // TODO: Implement weight logging
-    console.log('Log weight clicked');
+    setIsAddWeightOpen(true);
+  };
+
+  const handleWeightAdded = (newWeight: number) => {
+    setWeight(newWeight);
+    // Update the dayData with the new weight
+    const dateKey = selectedDate?.toISOString().split('T')[0];
+    if (dateKey) {
+      setDayData(prev => ({
+        ...prev,
+        [dateKey]: {
+          ...prev[dateKey],
+          weight: newWeight
+        }
+      }));
+    }
   };
 
   const handleWorkoutAdded = (workoutDetails: { 
@@ -165,9 +208,11 @@ const Dashboard: React.FC = () => {
   };
 
   const handleMealAdded = (mealDetails: any) => {
-    // Update the day data with the new meal information
-    const dateKey = selectedDate?.toISOString().split('T')[0] || new Date().toISOString().split('T')[0];
+    // Update the meals state with the new meal
+    setMeals(prevMeals => [...prevMeals, mealDetails]);
     
+    // Update the day data
+    const dateKey = selectedDate?.toISOString().split('T')[0] || new Date().toISOString().split('T')[0];
     setDayData(prevData => ({
       ...prevData,
       [dateKey]: {
@@ -176,11 +221,6 @@ const Dashboard: React.FC = () => {
         totalCalories: (prevData[dateKey]?.totalCalories || 0) + mealDetails.calories
       }
     }));
-
-    // If the selected date matches the meal date, update the meals state
-    if (selectedDate?.toISOString().split('T')[0] === dateKey) {
-      setMeals(prevMeals => [...prevMeals, mealDetails]);
-    }
   };
 
   return (
@@ -313,6 +353,13 @@ const Dashboard: React.FC = () => {
         onClose={() => setIsAddMealOpen(false)}
         selectedDate={selectedDate || new Date()}
         onMealAdded={handleMealAdded}
+      />
+
+      <AddWeightDialog
+        open={isAddWeightOpen}
+        onClose={() => setIsAddWeightOpen(false)}
+        onWeightAdded={handleWeightAdded}
+        selectedDate={selectedDate || new Date()}
       />
     </Box>
   );

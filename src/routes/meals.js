@@ -5,13 +5,13 @@ const { MealTracking } = require('../models');
 
 // Log a meal
 router.post('/log', [
-  body('meal_type').isIn(['breakfast', 'lunch', 'dinner', 'snack']).withMessage('Invalid meal type'),
-  body('meal_time').matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).withMessage('Valid meal time is required (HH:MM format)'),
+  body('type').isIn(['breakfast', 'lunch', 'dinner', 'snack']).withMessage('Invalid meal type'),
+  body('time').matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).withMessage('Valid meal time is required (HH:MM format)'),
   body('calories').isFloat({ min: 0 }).withMessage('Calories must be a positive number'),
   body('protein').isFloat({ min: 0 }).withMessage('Protein must be a positive number'),
   body('carbs').isFloat({ min: 0 }).withMessage('Carbs must be a positive number'),
-  body('fats').isFloat({ min: 0 }).withMessage('Fats must be a positive number'),
-  body('meal_name').notEmpty().withMessage('Meal name is required'),
+  body('fat').isFloat({ min: 0 }).withMessage('Fat must be a positive number'),
+  body('name').notEmpty().withMessage('Meal name is required'),
   body('log_date').optional().isISO8601().withMessage('Valid log date is required')
 ], async (req, res) => {
   try {
@@ -26,15 +26,15 @@ router.post('/log', [
 
     // Create meal log
     const mealLog = await MealTracking.create({
-      user_id: req.user.userId,
+      user_id: req.user.user_id,
       log_date: logDate,
-      meal_type: req.body.meal_type,
-      meal_time: req.body.meal_time,
+      meal_type: req.body.type,
+      meal_time: req.body.time,
       calories: req.body.calories,
       protein: req.body.protein,
       carbs: req.body.carbs,
-      fats: req.body.fats,
-      meal_name: req.body.meal_name,
+      fat: req.body.fat,
+      meal_name: req.body.name,
       notes: req.body.notes
     });
 
@@ -44,7 +44,12 @@ router.post('/log', [
     });
   } catch (error) {
     console.error('Meal logging error:', error);
-    res.status(500).json({ message: 'Server error logging meal' });
+    console.error('Request body:', req.body);
+    console.error('User:', req.user);
+    res.status(500).json({ 
+      message: 'Server error logging meal',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 

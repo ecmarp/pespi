@@ -16,6 +16,7 @@ import {
   Alert,
 } from '@mui/material';
 import axios from 'axios';
+import { useAuth } from '../context/AuthContext';
 
 interface AddMealDialogProps {
   open: boolean;
@@ -30,13 +31,14 @@ const AddMealDialog: React.FC<AddMealDialogProps> = ({
   selectedDate,
   onMealAdded,
 }) => {
+  const { token } = useAuth();
   const [mealType, setMealType] = useState('breakfast');
   const [mealTime, setMealTime] = useState('');
   const [mealName, setMealName] = useState('');
   const [calories, setCalories] = useState('');
   const [protein, setProtein] = useState('');
   const [carbs, setCarbs] = useState('');
-  const [fats, setFats] = useState('');
+  const [fat, setFat] = useState('');
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,23 +49,31 @@ const AddMealDialog: React.FC<AddMealDialogProps> = ({
     setLoading(true);
     setError(null);
 
+    if (!token) {
+      setError('You must be logged in to log a meal');
+      setLoading(false);
+      return;
+    }
+
     try {
-      const token = localStorage.getItem('token');
       const response = await axios.post(
-        `${process.env.REACT_APP_API_URL}/api/MealTrackings`,
+        `${process.env.REACT_APP_API_URL}/meals/log`,
         {
-          meal_type: mealType,
-          meal_time: mealTime,
-          meal_name: mealName,
+          type: mealType,
+          time: mealTime,
+          name: mealName,
           calories: parseFloat(calories),
           protein: parseFloat(protein),
           carbs: parseFloat(carbs),
-          fats: parseFloat(fats),
+          fat: parseFloat(fat),
           notes: notes,
           log_date: selectedDate.toISOString().split('T')[0],
         },
         {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
         }
       );
 
@@ -77,7 +87,7 @@ const AddMealDialog: React.FC<AddMealDialogProps> = ({
       setCalories('');
       setProtein('');
       setCarbs('');
-      setFats('');
+      setFat('');
       setNotes('');
       
       // Close dialog after a short delay
@@ -97,14 +107,23 @@ const AddMealDialog: React.FC<AddMealDialogProps> = ({
       <DialogTitle>Log a Meal</DialogTitle>
       <form onSubmit={handleSubmit}>
         <DialogContent>
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
+          {success && (
+            <Alert severity="success" sx={{ mb: 2 }}>
+              {success}
+            </Alert>
+          )}
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <FormControl fullWidth>
               <InputLabel>Meal Type</InputLabel>
               <Select
                 value={mealType}
                 label="Meal Type"
-                onChange={(e) => setMealType(e.target.value)}
-                required
+                onChange={(e: SelectChangeEvent) => setMealType(e.target.value)}
               >
                 <MenuItem value="breakfast">Breakfast</MenuItem>
                 <MenuItem value="lunch">Lunch</MenuItem>
@@ -112,100 +131,76 @@ const AddMealDialog: React.FC<AddMealDialogProps> = ({
                 <MenuItem value="snack">Snack</MenuItem>
               </Select>
             </FormControl>
-
+            
             <TextField
               label="Time"
               type="time"
               value={mealTime}
               onChange={(e) => setMealTime(e.target.value)}
               InputLabelProps={{ shrink: true }}
-              fullWidth
-              required
+              inputProps={{ step: 300 }}
             />
-
+            
             <TextField
               label="Meal Name"
               value={mealName}
               onChange={(e) => setMealName(e.target.value)}
               required
-              fullWidth
             />
-
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <TextField
-                label="Calories"
-                type="number"
-                value={calories}
-                onChange={(e) => setCalories(e.target.value)}
-                required
-                fullWidth
-              />
-              <TextField
-                label="Protein (g)"
-                type="number"
-                value={protein}
-                onChange={(e) => setProtein(e.target.value)}
-                required
-                fullWidth
-              />
-            </Box>
-
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <TextField
-                label="Carbs (g)"
-                type="number"
-                value={carbs}
-                onChange={(e) => setCarbs(e.target.value)}
-                required
-                fullWidth
-              />
-              <TextField
-                label="Fats (g)"
-                type="number"
-                value={fats}
-                onChange={(e) => setFats(e.target.value)}
-                required
-                fullWidth
-              />
-            </Box>
-
+            
             <TextField
-              label="Notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
+              label="Calories"
+              type="number"
+              value={calories}
+              onChange={(e) => setCalories(e.target.value)}
+              required
+            />
+            
+            <TextField
+              label="Protein (g)"
+              type="number"
+              value={protein}
+              onChange={(e) => setProtein(e.target.value)}
+              required
+            />
+            
+            <TextField
+              label="Carbs (g)"
+              type="number"
+              value={carbs}
+              onChange={(e) => setCarbs(e.target.value)}
+              required
+            />
+            
+            <TextField
+              label="Fat (g)"
+              type="number"
+              value={fat}
+              onChange={(e) => setFat(e.target.value)}
+              required
+            />
+            
+            <TextField
+              label="Notes (optional)"
               multiline
               rows={2}
-              fullWidth
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
             />
           </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={onClose}>Cancel</Button>
-          <Button type="submit" variant="contained" color="primary" disabled={loading}>
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
+            disabled={loading}
+          >
             {loading ? 'Logging...' : 'Log Meal'}
           </Button>
         </DialogActions>
       </form>
-
-      <Snackbar
-        open={!!error}
-        autoHideDuration={6000}
-        onClose={() => setError(null)}
-      >
-        <Alert onClose={() => setError(null)} severity="error">
-          {error}
-        </Alert>
-      </Snackbar>
-
-      <Snackbar
-        open={!!success}
-        autoHideDuration={6000}
-        onClose={() => setSuccess(null)}
-      >
-        <Alert onClose={() => setSuccess(null)} severity="success">
-          {success}
-        </Alert>
-      </Snackbar>
     </Dialog>
   );
 };

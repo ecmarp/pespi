@@ -81,7 +81,7 @@ const AddWorkoutDialog: React.FC<AddWorkoutDialogProps> = ({
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [currentWorkout, setCurrentWorkout] = useState<WorkoutTemplate | null>(null);
   const [tempDetails, setTempDetails] = useState<WorkoutDetails>({ sets: 1, reps: 1, totalCalories: 0 });
-  const [totalDuration, setTotalDuration] = useState<string>('30'); // Change to string type with default '30'
+  const [totalDuration, setTotalDuration] = useState<string>('30');
 
   const fetchWorkoutTemplates = useCallback(async () => {
     setLoading(true);

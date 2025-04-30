@@ -3,6 +3,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const { sequelize } = require('./models');
 const { authenticateToken } = require('./middleware/auth');
+const weightTrackingRoutes = require('./routes/weightTracking');
 
 // Load environment variables
 dotenv.config();
@@ -27,6 +28,7 @@ app.use('/api/workouts', authenticateToken, require('./routes/workouts'));
 app.use('/api/meals', authenticateToken, require('./routes/meals'));
 app.use('/api/goals', authenticateToken, require('./routes/goals'));
 app.use('/api/daily-logs', authenticateToken, require('./routes/dailyLogs'));
+app.use('/api/weight-tracking', authenticateToken, weightTrackingRoutes);
 
 // Basic test route
 app.get('/', (req, res) => {
@@ -64,4 +66,4 @@ async function startServer() {
   }
 }
 
-startServer(); 
+startServer();
